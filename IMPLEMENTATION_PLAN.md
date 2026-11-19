@@ -1,6 +1,6 @@
 # ShiftWise implementation plan
 
-This plan coordinates the implementation of the project defined in [PROJECT_BRIEF.md](PROJECT_BRIEF.md), which is the source of truth for scope, model, and result behavior. It does not mean the application or either solver has already been implemented.
+This plan records the ownership and integration workflow for the project defined in [PROJECT_BRIEF.md](PROJECT_BRIEF.md), which remains the source of truth for scope, model, and result behavior. The repository now contains the shared layer, both solver modules, dataset, and app; use this plan to coordinate future changes.
 
 ## Suggested repository layout
 
@@ -17,12 +17,16 @@ shiftwise-volunteer-scheduler/
 │   ├── helpers.py                 # Eligibility and overlap helpers (Manas)
 │   ├── metrics.py                 # Result metrics / checks (Manas)
 │   ├── solver_ortools.py          # CP-SAT solver (Shriansh)
-│   └── solver_pulp.py             # PuLP solver (Atharva)
+│   ├── solver_pulp.py             # PuLP solver (Atharva)
+│   └── API.md                     # Shared Python contract
 ├── docs/
 │   ├── DATASET_SPEC.md
 │   ├── DEMO_AND_VIVA.md
 │   └── MATHEMATICAL_MODEL.md       # Shriansh's fuller explanation, if needed
 ├── demo_script.md                 # Demo sequence / cues (Manas)
+├── tests/
+│   ├── test_shared_contract.py
+│   └── test_solvers.py
 ├── requirements.txt               # Coordinated dependency list
 └── README.md                      # Coordinated setup and run instructions
 ```
@@ -115,6 +119,6 @@ If time becomes tight, preserve the deterministic model, both working solver pat
 
 ## Dependencies and environment notes
 
-The planned runtime dependencies are Python, Streamlit, OR-Tools, PuLP, and a working PuLP backend. The exact Python version and compatible package versions should be chosen by the team and recorded in the README and dependency file after checking the target machines. OR-Tools CP-SAT is supplied through the OR-Tools package. PuLP is a modeling library; it needs a solver executable/backend such as CBC available to it. The team must explicitly install or otherwise make the chosen backend available, check that PuLP detects it, and run a small optimization using it before presentation day. Do not infer backend readiness merely from importing PuLP.
+The verified local environment is Windows with Python 3.14.4, Streamlit 1.67.0, OR-Tools 9.15.6755, PuLP 3.3.2, and the HiGHS Python backend `highspy` 1.16.0. These versions are pinned in `requirements.txt`; `.venv/` is the project-local environment and is ignored by Git. OR-Tools CP-SAT is supplied through the OR-Tools package. PuLP uses HiGHS via `highspy`; the team verified an actual optimization rather than relying on an import check. Re-run the test suite and local app smoke check after dependency changes.
 
 The application runs locally with no AI credentials or online service requirement. Any optional package setup that requires downloads should be done early enough to catch platform or network issues.

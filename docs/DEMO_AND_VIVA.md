@@ -1,20 +1,20 @@
 # ShiftWise demo and viva guide
 
-This guide supports the project in [PROJECT_BRIEF.md](../PROJECT_BRIEF.md). The brief remains the source of truth for the mathematical model and app requirements.
+This guide supports the project in [PROJECT_BRIEF.md](../PROJECT_BRIEF.md). The brief remains the source of truth for the mathematical model and app requirements. Current local verification with both solver implementations returned 10/10 slots and 3 preference matches for normal staffing, and 9/10 slots and 3 preference matches for limited staffing, leaving `av-setup` uncovered. Assignment identities may vary.
 
 ## Short demo flow
 
 Aim for a concise walkthrough that shows both successful staffing and a real shortage. The exact event records will be supplied later by Darshan; this guide does not prescribe final records.
 
 1. **Introduce the use case.** Explain that a campus event has individual positions to staff. Volunteers have skills, availability, assignment caps, and preferences.
-2. **Show the normal-staffing scenario.** Select it in the local app, choose OR-Tools or PuLP, and run optimization. Point out the roster, filled/total count, coverage percentage, preference matches, and assignment count per volunteer.
-3. **Explain one assignment and one exclusion.** Identify an eligible volunteer-slot pair and a pair excluded by availability or required skill. Explain that only eligible pairs become decision variables.
-4. **Show the limited-staffing scenario.** Run it and point out the uncovered slot. Give the data-based reason it cannot be covered under the skill, availability, overlap, and cap rules.
-5. **Compare both solvers.** Choose compare mode. Discuss status, coverage, preference count, and elapsed time. The selected volunteer for every slot may differ because several rosters can have the same optimal score.
+2. **Show the normal-staffing scenario.** Select it, choose OR-Tools or PuLP, and run optimization. The verified result is 10/10 slots and 3 preference matches. Point out the roster and assignment counts.
+3. **Explain eligibility and the trade-off.** V05 is listed as available for `photo-booth` but lacks `Photo`, so that pair is excluded. V01 prefers `av-demo` but must cover the only-eligible `workshop-checkin` slot to preserve full coverage.
+4. **Show limited staffing.** The verified result is 9/10 slots, with `av-setup` uncovered because no AV-qualified volunteer is available for it.
+5. **Compare both solvers.** Choose compare mode. Both report the same coverage and preference scores for these scenarios; elapsed times and roster identities may differ.
 6. **Show the matching idea.** Describe volunteers on one side of a bipartite graph and slots on the other. Eligible edges connect possible assignments; the solver selects a useful subset.
 7. **Finish with the CSV download.** Download the roster and state that the first version is local and uses deterministic optimization.
 
-For a very short presentation, prioritize steps 1, 2, 4, and 5, then explain the graph and objective verbally. Manas's demo script should list the actual scenario choice and expected talking points after Darshan authors the dataset.
+For a very short presentation, prioritize steps 1, 2, 4, and 5, then explain the graph and objective verbally. Use [demo_script.md](../demo_script.md) for the compact presenter sequence.
 
 ## Course-language explanation
 

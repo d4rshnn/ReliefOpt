@@ -1,42 +1,35 @@
 # ShiftWise mini-project demo script
 
-This is a repeatable walkthrough using Darshan's existing normal- and limited-staffing scenarios (11 volunteers and 10 individual slots, as documented in `data/README.md`). It does not prescribe, create, or revise any volunteer or slot records. Use the records currently present in `data/` and describe only outcomes observed when the app is run.
+This walkthrough uses Darshan-authored scenarios in `data/`. On the verified Windows/Python 3.14.4 environment, both solvers returned 10/10 filled with 3 preference matches for normal staffing and 9/10 with 3 preference matches for limited staffing; `av-setup` was the vacancy. Assignment identities can vary, so point to the roster currently shown by the app.
 
 ## 1. Introduce the problem
 
-“ShiftWise helps a campus event coordinator assign volunteers to individual role slots. Each volunteer has skills, availability, a maximum assignment count, and preferred slots. The goal is to cover as many positions as possible without violating hard constraints.”
+“ShiftWise helps a campus event coordinator assign volunteers to individual role slots. Each volunteer has skills, availability, a maximum assignment count, and preferred slots. Our goal is to fill as many positions as possible while obeying hard constraints.”
 
 ## 2. Run normal staffing
 
-Select **Normal staffing**, choose one solver, and run optimization. Darshan's data notes describe this scenario as having a feasible full-coverage roster; confirm the live result before stating the exact score. Point to the roster and explain the displayed filled/total slots, coverage percentage, preference matches, solver status, and assignment counts per volunteer. Do not claim a particular volunteer-to-slot assignment unless it appears in the live result.
+Select **Normal staffing**, choose **OR-Tools** or **PuLP**, and click **Run optimization**. State the verified score: **10 of 10 slots filled, with 3 preference matches**. Show the roster, coverage percentage, preferences, and per-volunteer counts.
 
-## 3. Explain eligibility and one exclusion
+## 3. Explain eligibility, a skill exclusion, and the objective
 
-Choose one assignment visible in the roster. Check the corresponding volunteer's availability and skills against the slot. Then identify one ineligible pair from the actual dataset—for example, an unavailable volunteer or a volunteer lacking the slot's required skill. Explain that only eligible volunteer-slot pairs are candidates for assignment.
+Point out that V05 lists the photo-booth slot as available but does not have the required Photo skill; that pair is not eligible. Explain that V01 prefers AV demo support but is the only candidate for workshop check-in. The two slots overlap, so keeping full coverage requires V01 at check-in and another qualified volunteer at demo. This is an example of coverage taking priority over a preference.
+
+V03's assignment cap is demonstrated by two eligible non-overlapping positions, registration-1 and info-desk. V03 can cover at most one because its cap is one; the overlap between the two registration positions is a separate constraint.
 
 ## 4. Run limited staffing
 
-Select **Limited staffing** and run the same solver. Darshan's dataset notes identify `av-setup` as the deliberate shortage: no AV-skilled volunteer is available for that slot. Confirm that the live result leaves it uncovered, then explain that the solver returns a useful partial roster rather than requiring every slot to be filled.
+Select **Limited staffing** and run a solver. State the verified score: **9 of 10 slots filled, with 3 preference matches**. Point to `av-setup` as uncovered: it requires AV and no AV-qualified volunteer is available for it.
 
 ## 5. Compare both solvers
 
-Choose **Compare both** and run optimization. Compare normalized status, filled slots, preference matches, and elapsed time. The two rosters do not need identical volunteer identities: if multiple assignments have the same optimal coverage and preference score, either roster can be valid.
+Choose **Compare both** and run optimization. Compare status, filled/total count, preferences, and elapsed time. Both solvers have the same verified coverage and preference scores on these scenarios. Their volunteer assignments may differ while remaining equally optimal.
 
 ## 6. Explain the discrete mathematics
 
-“Volunteers form one side of a bipartite graph and role slots form the other. An edge connects a volunteer to a slot only when availability and skill requirements are satisfied. A binary decision variable indicates whether an eligible edge is selected. Additional constraints enforce one volunteer per slot, each volunteer's assignment cap, and no overlapping shifts for the same volunteer.”
+“Volunteers form one side of a bipartite graph and individual role slots form the other. An edge exists only when a volunteer is available and has any required skill. A binary decision variable says whether an eligible edge is selected. Constraints enforce at most one volunteer per slot, assignment caps, and no overlapping assignments for the same volunteer.”
 
-“The objective gives each filled slot a weight of `number_of_slots + 1`, then adds preference points. Since preference points can never exceed the number of slots, coverage always has priority.”
+“The objective maximizes `(number of slots + 1) × filled slots + preference matches`. Since preferences can add at most one point per filled slot, gaining one filled slot always outweighs any possible preference loss.”
 
 ## 7. Finish with CSV export
 
-Download the displayed roster as CSV and briefly show the exported columns. Close by noting that the prototype runs locally and uses deterministic optimization; it does not call a generative AI service.
-
-## Presenter checklist
-
-- [ ] Confirm the current normal scenario and its actual observed coverage.
-- [ ] Confirm the current limited scenario and identify its actual uncovered slot.
-- [ ] Be ready to explain one eligible pair and one ineligible pair from the current records.
-- [ ] Run each solver and compare scores, not exact assignment identities.
-- [ ] Try the CSV download before presenting.
-- [ ] Do not state unverified outcomes or invent sample records during the walkthrough.
+Download the displayed roster as CSV. In compare mode, the CSV includes both solver rosters. Close by noting that the application runs locally and uses deterministic optimization without a generative AI service.

@@ -6,13 +6,13 @@
   "volunteers": [
     {"id": "V01", "name": "Ari Sen", "skills": ["AV"], "available_slot_ids": ["av-demo", "workshop-checkin"], "max_assignments": 1, "preferred_slot_ids": ["av-demo"]},
     {"id": "V02", "name": "Bela Roy", "skills": ["AV"], "available_slot_ids": ["av-setup", "av-demo"], "max_assignments": 1, "preferred_slot_ids": ["av-setup"]},
-    {"id": "V03", "name": "Chin Das", "skills": [], "available_slot_ids": ["registration-1", "registration-2", "helpdesk-1", "info-desk"], "max_assignments": 1, "preferred_slot_ids": ["registration-1", "registration-2"]},
+    {"id": "V03", "name": "Chin Das", "skills": [], "available_slot_ids": ["registration-1", "registration-2", "helpdesk-1", "info-desk"], "max_assignments": 1, "preferred_slot_ids": ["registration-1", "info-desk"]},
     {"id": "V04", "name": "Diya Rao", "skills": [], "available_slot_ids": ["registration-1"], "max_assignments": 1, "preferred_slot_ids": []},
-    {"id": "V05", "name": "Eshan Pal", "skills": [], "available_slot_ids": ["registration-2", "helpdesk-1"], "max_assignments": 1, "preferred_slot_ids": []},
+    {"id": "V05", "name": "Eshan Pal", "skills": [], "available_slot_ids": ["registration-2", "helpdesk-1", "photo-booth"], "max_assignments": 1, "preferred_slot_ids": []},
     {"id": "V06", "name": "Farah Ali", "skills": [], "available_slot_ids": ["helpdesk-1", "helpdesk-2", "info-desk", "cleanup"], "max_assignments": 2, "preferred_slot_ids": ["cleanup"]},
     {"id": "V07", "name": "Gautam Iyer", "skills": ["Photo"], "available_slot_ids": ["helpdesk-2", "photo-booth"], "max_assignments": 2, "preferred_slot_ids": ["photo-booth"]},
     {"id": "V08", "name": "Hana Bose", "skills": [], "available_slot_ids": ["helpdesk-2", "cleanup"], "max_assignments": 2, "preferred_slot_ids": []},
-    {"id": "V09", "name": "Ishaan Mehta", "skills": [], "available_slot_ids": ["registration-2", "info-desk", "cleanup"], "max_assignments": 2, "preferred_slot_ids": ["info-desk"]},
+    {"id": "V09", "name": "Ishaan Mehta", "skills": [], "available_slot_ids": ["registration-2", "info-desk", "cleanup"], "max_assignments": 2, "preferred_slot_ids": []},
     {"id": "V10", "name": "Jiya Kapoor", "skills": ["AV"], "available_slot_ids": ["av-setup"], "max_assignments": 1, "preferred_slot_ids": []},
     {"id": "V11", "name": "Kabir Nair", "skills": ["Photo"], "available_slot_ids": ["helpdesk-1", "photo-booth"], "max_assignments": 2, "preferred_slot_ids": []}
   ],

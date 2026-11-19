@@ -1,6 +1,9 @@
 # Personal coordination prompts; keep local and out of GitHub.
 PERSONAL_STARTER_PROMPTS.md
 
+# Project-local Python environment
+.venv/
+
 # Python bytecode and caches
 __pycache__/
 *.py[cod]
