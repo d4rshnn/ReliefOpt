@@ -1,2 +1,8 @@
 # Personal coordination prompts; keep local and out of GitHub.
 PERSONAL_STARTER_PROMPTS.md
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
