@@ -1,44 +1,30 @@
-# Synthetic scenario notes
+# ReliefOpt Vadodara flood scenarios
 
-Darshan alone authored the fictional Campus Tech Fest records in the two JSON files in this directory. Each scenario has 11 volunteers and 10 individual role slots. The JSON files are the source of truth for actual records; this note describes the demonstrations without copying the full roster.
+These two small, fictional scenarios model resource allocation during a Vadodara flood response. They are designed for a deterministic PDL demonstration of combinatorics, bipartite matching, eligibility, constraints, and partial coverage. They are not live incident data or operational dispatch instructions.
 
-## Scenario intent
+## Scenario records
 
-- `normal_staffing.json` has a feasible roster covering all 10 positions. Its AV availability permits the setup and demo roles to be staffed by different volunteers.
-- `limited_staffing.json` removes all availability for the AV setup role from AV-qualified volunteers. The `av-setup` slot therefore has no eligible volunteer and must remain uncovered; `av-demo` remains staffable.
+Each scenario has **11 response resources** and **10 incidents**. Resource records use the shared `Volunteer` fields (`id`, `name`, `skills`, `available_slot_ids`, `max_assignments`, `preferred_slot_ids`); incident records use the shared `ShiftSlot` fields (`id`, `role`, `start_time`, `end_time`, `required_skill`). The JSON top-level `incident_triage` map contains UI-only RED/YELLOW/GREEN display labels keyed by incident ID. It is separate from solver records and is not an optimization weight.
 
-## Model demonstrations in the records
+The units include two NDRF boats, two ALS ambulances, a Fire Brigade heavy rescue team, a mobile medical van, a supply drone, a Fire Brigade rescue unit, an NDRF flood response team, a Civil Defence evacuation unit, and a relief supply truck. Skills include `Boat`, `Water_Rescue`, `ALS`, `Medical`, `Heavy_Rescue`, `Supply`, `Drone`, `Evacuation`, and `Logistics`.
 
-- **Availability exclusion:** V04 is available for `registration-1` but not `registration-2`.
-- **Skill exclusion:** V05 lists `photo-booth` in availability but does not have the required `Photo` skill. V07 and V11 have the skill and are available for that slot.
-- **Satisfied preference:** V03 prefers `registration-1`, V06 prefers `cleanup`, and V07 prefers `photo-booth`; these can be assigned in a full-coverage roster.
-- **Preference sacrificed for coverage:** V01 prefers `av-demo` and is the only volunteer available for `workshop-checkin`. The slots overlap. Assigning V02 to `av-demo` and V01 to check-in fills both; assigning V01 to the preferred demo slot leaves check-in unfilled.
-- **Overlap:** the data has concurrent registration and help-desk positions, plus `av-demo` and `workshop-checkin` at the same time. A volunteer cannot be assigned to two overlapping positions.
-- **Binding assignment cap:** V03 has a cap of one and is available for `registration-1` and `info-desk`. Those time intervals do not overlap, so the cap itself prevents V03 from taking both. V03 prefers both positions; it can receive at most one of those preference matches. Other available volunteers can cover whichever slot V03 does not take.
-- **Unavoidable shortage:** in limited staffing, no AV-qualified volunteer is available for `av-setup`, so that position cannot be filled.
-- **Invalid-input examples:** keep malformed samples out of the runnable scenarios. The shared validator should reject duplicate IDs, unknown availability/preference references, nonpositive slot durations, negative caps, and invalid required-skill values.
+The ten incidents are `rooftop-flood-rescue`, `trauma-evacuation`, `oldage-home-flood`, `icu-transfer`, `clean-water-delivery`, `structural-collapse-rescue`, `medicine-delivery`, `food-relief-convoy`, `debris-clearance`, and `shelter-evacuation`. Times are integer minutes after midnight on a single fictional response day. Intervals use the shared half-open rule `[start_time, end_time)`.
 
-## Manual normal-staffing feasibility trace
+## Deliberate demonstrations
 
-One full-coverage assignment is:
+- **Skill exclusion:** `NDRF-TEAM-01` lists `rooftop-flood-rescue` in its availability but lacks the required `Boat` skill, so it is not eligible. `NDRF-BOAT-01` and `NDRF-BOAT-02` have the required capability when available.
+- **Availability exclusion:** In normal staffing, both NDRF boats are listed for `rooftop-flood-rescue`. In limited staffing, neither boat is available for that incident window. Other units either lack `Boat` or are not available for it.
+- **Overlap conflict:** `rooftop-flood-rescue` and `oldage-home-flood` run from 09:00 to 11:00. One boat cannot cover both at once; two boats can cover them separately in normal staffing. The ALS incidents also overlap, so the two ALS ambulances must be allocated across them without double-booking either unit.
+- **Binding capacity cap:** `DRONE-SUPPLY-01` is eligible for and prefers the non-overlapping `clean-water-delivery` and `food-relief-convoy` incidents, but its cap is one. It can take at most one; `SUPPLY-TRUCK-01` and `CIVIL-DEFENSE-01` provide alternatives. `FIRE-HEAVY-01` has a cap of one while eligible for the non-overlapping structural rescue and debris clearance incidents; `FIRE-RESCUE-01` is another Heavy_Rescue-capable option.
+- **Preferences:** Several units prefer incidents for which they have matching availability and skills. The solvers use eligible preferred assignments as secondary objective points after coverage. Different tied assignments are allowed.
+- **Unavoidable shortage:** Limited staffing removes rooftop availability from both Boat units. No other unit has the `Boat` skill, so `rooftop-flood-rescue` has no eligible edge and cannot be covered. The mathematical model may still cover the other nine incidents and return a valid partial allocation.
 
-| Slot | Volunteer ID |
-|---|---|
-| `registration-1` | V03 |
-| `registration-2` | V05 |
-| `helpdesk-1` | V11 |
-| `helpdesk-2` | V08 |
-| `av-setup` | V10 |
-| `av-demo` | V02 |
-| `workshop-checkin` | V01 |
-| `info-desk` | V09 |
-| `cleanup` | V06 |
-| `photo-booth` | V07 |
+## Triage display and optimization scope
 
-This is a feasibility witness, not a promise that either solver will return the identical roster. It respects all listed skills, availability, caps, and overlaps, and it satisfies three listed preferences. Actual solver outcomes should be described only after running the app.
+The UI shows RED (critical), YELLOW (urgent), and GREEN (routine) labels from `incident_triage` to give the dispatcher and teacher context. The map is display metadata only. The current shared solver interface contains skills, availability, caps, preferences, and incident time windows, but no severity field. Both current solver modules maximize total coverage first and preference matches second; they do **not** optimize a severity-weighted triage score. The UI therefore labels the score as preference matches and does not claim that RED incidents mathematically outrank other incidents. Adding severity to the optimization would require a coordinated shared model and solver change outside these dataset/app files.
 
-The preference trade-off is forced by eligibility: V01 is the sole candidate for check-in and cannot cover check-in and demo simultaneously. A full-coverage roster therefore leaves V01's demo preference unmet. The V03 cap is independently demonstrable with the non-overlapping `registration-1` and `info-desk` slots; the two registration positions overlap, so they are not the cap example.
+## Expected scenario outcomes
 
-## Verified solver outcomes
+Normal staffing is constructed so all ten incidents have a feasible allocation. Limited staffing is constructed so rooftop rescue has no eligible resource; its expected maximum coverage is nine of ten. Run both configured solvers to verify actual status, coverage, preference score, and assignments. Assignment identities and elapsed times can vary by solver/backend while satisfying the same model.
 
-Using the project-local dependencies on Windows/Python 3.14.4, both implementations returned `optimal` for both scenarios. Each returned 10/10 slots and 3 preference matches for normal staffing; each returned 9/10 and 3 preference matches for limited staffing, with `av-setup` uncovered. The exact assignment lists can differ between solvers and are not part of the expected result.
+These are deterministic teaching fixtures. They do not model routing, travel time, resource geography, changing flood conditions, multiple required units per incident, or real-time reassignment.

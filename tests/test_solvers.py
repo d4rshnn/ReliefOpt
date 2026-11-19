@@ -1,4 +1,4 @@
-"""Focused integration tests for the ShiftWise solvers, data, and app adapters."""
+"""Focused integration tests for ReliefOpt solvers, data, and app adapters."""
 
 from __future__ import annotations
 
@@ -46,10 +46,8 @@ class SolverIntegrationTests(unittest.TestCase):
                 self.assertEqual(result.status, "optimal")
                 self.assertEqual((result.filled_slots, result.total_slots), (10, 10))
                 validate_assignments(volunteers, slots, result.assignments)
-                assigned = dict((slot_id, volunteer_id) for volunteer_id, slot_id in result.assignments)
-                self.assertEqual(assigned["workshop-checkin"], "V01")
-                self.assertNotEqual(assigned.get("av-demo"), "V01")
-                self.assertEqual(assignment_counts(volunteers, result.assignments)["V03"], 1)
+                self.assertEqual(result.preference_count, 10)
+                validate_assignments(volunteers, slots, result.assignments)
 
             with self.subTest(solver=solve.__module__, scenario="limited"):
                 volunteers, slots = app.to_contract_records(limited)
@@ -57,7 +55,8 @@ class SolverIntegrationTests(unittest.TestCase):
                 self.assertIsInstance(result, SolverResult)
                 self.assertEqual(result.status, "optimal")
                 self.assertEqual((result.filled_slots, result.total_slots), (9, 10))
-                self.assertEqual(uncovered_slot_ids(slots, result.assignments), ["av-setup"])
+                self.assertEqual(result.preference_count, 9)
+                self.assertEqual(uncovered_slot_ids(slots, result.assignments), ["rooftop-flood-rescue"])
                 validate_assignments(volunteers, slots, result.assignments)
 
     def test_both_solvers_agree_on_coverage_and_preference_scores(self):
@@ -113,21 +112,21 @@ class SolverIntegrationTests(unittest.TestCase):
             by_id = {volunteer.id: volunteer for volunteer in volunteers}
             for volunteer_id, count in counts.items():
                 self.assertLessEqual(count, by_id[volunteer_id].max_assignments)
-            self.assertEqual(counts["V03"], 1)
+            self.assertEqual(counts["DRONE-SUPPLY-01"], 1)
 
-        # V03's preferred positions are non-overlapping, so the cap—not a time
-        # conflict—prevents it from covering both in one roster.
+        # The drone can cover either of two non-overlapping preferred supply
+        # jobs, but its cap is one. The cap—not a time conflict—prevents both.
         by_id = {slot.id: slot for slot in slots}
-        self.assertEqual(by_id["registration-1"].end_time, 600)
-        self.assertEqual(by_id["info-desk"].start_time, 720)
-        v03 = next(volunteer for volunteer in volunteers if volunteer.id == "V03")
-        self.assertTrue(is_eligible(v03, by_id["registration-1"]))
-        self.assertTrue(is_eligible(v03, by_id["info-desk"]))
+        self.assertEqual(by_id["clean-water-delivery"].end_time, 660)
+        self.assertEqual(by_id["food-relief-convoy"].start_time, 720)
+        drone = next(unit for unit in volunteers if unit.id == "DRONE-SUPPLY-01")
+        self.assertTrue(is_eligible(drone, by_id["clean-water-delivery"]))
+        self.assertTrue(is_eligible(drone, by_id["food-relief-convoy"]))
         with self.assertRaisesRegex(ValidationError, "exceeding cap"):
             validate_assignments(
                 volunteers,
                 slots,
-                [("V03", "registration-1"), ("V03", "info-desk")],
+                [("DRONE-SUPPLY-01", "clean-water-delivery"), ("DRONE-SUPPLY-01", "food-relief-convoy")],
             )
 
     def test_dataset_has_availability_and_skill_exclusions_and_preferences(self):
@@ -135,10 +134,15 @@ class SolverIntegrationTests(unittest.TestCase):
         volunteers, slots = app.to_contract_records(scenario)
         volunteers_by_id = {volunteer.id: volunteer for volunteer in volunteers}
         slots_by_id = {slot.id: slot for slot in slots}
-        self.assertFalse(is_eligible(volunteers_by_id["V04"], slots_by_id["registration-2"]))
-        self.assertIn("photo-booth", volunteers_by_id["V05"].available_slot_ids)
-        self.assertFalse(is_eligible(volunteers_by_id["V05"], slots_by_id["photo-booth"]))
-        self.assertTrue(is_eligible(volunteers_by_id["V07"], slots_by_id["photo-booth"]))
+        self.assertIn("rooftop-flood-rescue", volunteers_by_id["NDRF-TEAM-01"].available_slot_ids)
+        self.assertFalse(is_eligible(volunteers_by_id["NDRF-TEAM-01"], slots_by_id["rooftop-flood-rescue"]))
+        self.assertTrue(is_eligible(volunteers_by_id["NDRF-BOAT-01"], slots_by_id["rooftop-flood-rescue"]))
+        limited = load_scenario("limited_staffing")
+        limited_volunteers, limited_slots = app.to_contract_records(limited)
+        limited_by_id = {unit.id: unit for unit in limited_volunteers}
+        limited_slot = {slot.id: slot for slot in limited_slots}["rooftop-flood-rescue"]
+        self.assertFalse(is_eligible(limited_by_id["NDRF-BOAT-01"], limited_slot))
+        self.assertFalse(is_eligible(limited_by_id["NDRF-BOAT-02"], limited_slot))
 
     def test_invalid_dataset_records_are_rejected(self):
         scenario = load_scenario("normal_staffing")
@@ -171,16 +175,16 @@ class SolverIntegrationTests(unittest.TestCase):
         self.assertIsInstance(volunteers[0], Volunteer)
         self.assertIsInstance(slots[0], ShiftSlot)
         results = app.run_solvers(scenario, "Compare both")
-        self.assertEqual(set(results), {"OR-Tools", "PuLP"})
-        result = results["OR-Tools"]
-        rows = app.result_rows(scenario, result, "OR-Tools")
+        self.assertEqual(set(results), {"OR-Tools CP-SAT", "PuLP"})
+        result = results["OR-Tools CP-SAT"]
+        rows = app.result_rows(scenario, result, "OR-Tools CP-SAT")
         self.assertEqual(len(rows), 10)
-        unfilled = [row for row in rows if row["Volunteer"] == "Unfilled"]
-        self.assertEqual([row["Slot"] for row in unfilled], ["av-setup"])
+        unfilled = [row for row in rows if row["Dispatch status"] == "UNATTENDED"]
+        self.assertEqual([row["Incident"] for row in unfilled], ["rooftop-flood-rescue"])
         csv_text = app.csv_bytes(rows).decode("utf-8")
-        self.assertIn("Solver,Slot,Role,Time,Required skill,Volunteer,Volunteer ID", csv_text)
-        self.assertIn("av-setup", csv_text)
-        self.assertIn("Unfilled", csv_text)
+        self.assertIn("Solver,Triage,Incident,Role,Time,Required capability,Response unit,Resource ID,Dispatch status", csv_text)
+        self.assertIn("rooftop-flood-rescue", csv_text)
+        self.assertIn("UNATTENDED", csv_text)
 
 
 if __name__ == "__main__":
