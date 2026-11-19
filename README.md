@@ -1,33 +1,48 @@
-# ShiftWise: Volunteer Shift Scheduler
+# ReliefOpt: Disaster Relief Resource & Task Allocation
 
-ShiftWise is a local Streamlit prototype for assigning volunteers to individual event positions. It demonstrates **combinatorics, bipartite matching, and constraints** by modeling eligible volunteer-to-slot pairs and selecting a coverage-first roster with OR-Tools CP-SAT or PuLP. The app is deterministic and does not call a generative AI service.
+ReliefOpt is a local, deterministic Streamlit teaching prototype for assigning response units to fictional flood-response incidents in Vadodara. A coordinator chooses a staffing scenario and optimization engine, runs an allocation, reviews the dispatch manifest and any unattended incident, and can download the manifest as CSV.
 
-## Features
+The project demonstrates combinatorics, bipartite matching, and constrained optimization. It creates a graph between response resources and incidents, removes pairs that fail skill or availability requirements, and chooses a valid subset of the remaining pairs. OR-Tools CP-SAT and PuLP implement the same coverage-first model. This is a classroom prototype, not an operational emergency dispatch system.
 
-- Normal-staffing and limited-staffing Campus Tech Fest scenarios.
-- OR-Tools, PuLP, and compare-both solver choices.
-- Roster with slot, role, time, required skill, and assigned volunteer.
-- Coverage count and percentage, preference matches, per-volunteer assignment counts, and uncovered positions.
-- Comparison of status, coverage, preference count, and elapsed solver time.
-- CSV download of the displayed roster, including unfilled positions.
-- Shared record validation and post-solve checks for eligibility, caps, unique slot assignments, and time conflicts.
+## What the app does
 
-The volunteer and slot sets form a bipartite graph. A binary variable represents each eligible pair: the volunteer must be available and have the required skill, if any. The model enforces at most one volunteer per slot, assignment caps, and half-open time conflicts. It maximizes `(number of slots + 1) × filled slots + preference matches`, so no possible preference gain can outweigh an additional filled slot. See [docs/MATHEMATICAL_MODEL.md](docs/MATHEMATICAL_MODEL.md) for the derivation.
+- Select the normal response-capacity or limited-staffing scenario.
+- Run OR-Tools CP-SAT, PuLP, or both for comparison.
+- Show incident triage labels, dispatch assignments, and unattended incidents.
+- Show incident coverage, coverage percentage, eligible preference matches, and solver latency.
+- Show response-unit workload against each unit’s assignment cap.
+- Compare solver status, coverage, preference score, and elapsed time.
+- Export the dispatch manifest, including unattended incidents, to CSV.
+- Validate scenario data and check assignment eligibility and constraints.
 
-## Python and dependencies
+The RED, YELLOW, and GREEN triage labels provide incident context in the interface. **Severity is not an optimization input.** The model maximizes
 
-The setup below was installed and verified on Windows with **Python 3.14.4**. `requirements.txt` pins the versions used for that verification:
+```text
+(number of incidents + 1) × covered incidents + eligible preference matches
+```
 
-- Streamlit 1.67.0
-- OR-Tools 9.15.6755 (CP-SAT)
-- PuLP 3.3.2
-- HiGHS Python backend `highspy` 1.16.0
+Coverage therefore has strict priority over preferences; preferences distinguish allocations with equal coverage. See [docs/MATHEMATICAL_MODEL.md](docs/MATHEMATICAL_MODEL.md) and [data/README.md](data/README.md). Some planning material still contains older ShiftWise descriptions and an outdated claim that triage severity affects the objective; the implemented contract, solvers, and dataset notes use the coverage-plus-preferences objective described here.
 
-PuLP is a modeling library, so the configured HiGHS backend is installed separately through `highspy`. The team verified that PuLP selected HiGHS and solved the project fixtures. CBC is not required by this setup.
+## Scenarios and verified results
+
+Each fictional scenario contains **11 response resources and 10 incidents**. The normal scenario covers all ten incidents. Limited staffing removes both boat units’ availability for `rooftop-flood-rescue`; no other unit has the required `Boat` skill, so the incident has no eligible resource and remains unattended.
+
+Both configured solvers were run locally against the current records:
+
+| Scenario | OR-Tools CP-SAT | PuLP | Unattended incident |
+| --- | --- | --- | --- |
+| Normal response capacity | Optimal, 10/10 covered, 10 preference matches | Optimal, 10/10 covered, 10 preference matches | None |
+| Limited staffing | Optimal, 9/10 covered, 9 preference matches | Optimal, 9/10 covered, 9 preference matches | `rooftop-flood-rescue` |
+
+Different resource-to-incident assignments can be equally optimal, so compare status and scores rather than expecting identical rosters. Preference matches are not triage points.
+
+## Requirements and PuLP backend
+
+The verified local setup used **Python 3.14.4** and the pinned dependencies in `requirements.txt`: Streamlit 1.67.0, OR-Tools 9.15.6755, PuLP 3.3.2, and `highspy` 1.16.0. The PuLP implementation is a modeling interface; it selects the separately installed **HiGHS** engine through `highspy` when available. The current local run confirmed the selected backend was HiGHS. `requirements.txt` includes `highspy`, so no separate backend installation command is needed after installing project requirements.
 
 ## Install and run on Windows PowerShell
 
-Run these commands from the repository root. The virtual environment and packages stay inside `.venv`; `.gitignore` excludes it.
+Run these commands from the repository root. They create a project-local `.venv` and install the pinned dependencies there.
 
 ```powershell
 py -3.14 -m venv .venv
@@ -37,9 +52,9 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Streamlit serves the app locally, normally at `http://localhost:8501`, and opens the default browser. If it does not open automatically, visit that address. Stop the server with **Ctrl+C** in the PowerShell window.
+Streamlit serves the app locally and normally opens the default browser at `http://localhost:8501`. If a browser does not open automatically, visit that address. Stop the server by pressing **Ctrl+C** in the PowerShell terminal.
 
-If PowerShell activation is restricted, use the virtual environment interpreter directly instead:
+If PowerShell does not allow environment activation, use the environment’s Python directly:
 
 ```powershell
 py -3.14 -m venv .venv
@@ -49,7 +64,7 @@ py -3.14 -m venv .venv
 
 ## Install and run on macOS/Linux
 
-Python 3.14 is the version verified for this repository; other versions may work but have not been checked here.
+Python 3.14.4 is the version verified by the project; other Python versions have not been verified here.
 
 ```bash
 python3.14 -m venv .venv
@@ -59,42 +74,69 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Open `http://localhost:8501` if the browser does not open automatically. Stop the server with **Ctrl+C**.
-
-## Use the app
-
-1. Select **Normal staffing** to see the full-coverage scenario, or **Limited staffing** to see a deliberate AV setup shortage.
-2. Choose **OR-Tools**, **PuLP**, or **Compare both**, then click **Run optimization**.
-3. Review filled/total slots, coverage percentage, preference matches, assignment counts, and the uncovered-slot list. Unfilled positions are expected in limited staffing.
-4. In compare mode, compare solver status and scores. The volunteer identities may differ when multiple rosters achieve the same objective.
-5. Click **Download roster as CSV** to export the displayed roster. In compare mode the CSV includes rows for both solver rosters.
-
-The current synthetic scenarios each contain 11 fictional volunteers and 10 slots. On the verified local environment, both solvers returned **10/10 filled and 3 preference matches** for normal staffing, and **9/10 filled and 3 preference matches** for limited staffing, leaving `av-setup` uncovered. Those counts are checked in the test suite; assignment identity is not required to match.
+Open `http://localhost:8501` if the browser does not open automatically. Stop the server with **Ctrl+C** in the terminal.
 
 ## Run the tests
 
-With the project environment active:
+The repository’s tests use Python’s built-in `unittest` framework; pytest is not required by `requirements.txt`. With the project environment active, run:
 
 ```powershell
 python -m unittest discover -s tests -v
 ```
 
-Or without activation:
+Or use the project interpreter without activation:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Tests cover scenario validation, invalid records, eligibility, half-open overlap, caps, coverage-first preferences, both solver result contracts and score agreement, limited staffing, and app record/CSV handling.
+The current verification ran 20 tests successfully. They cover shared data validation and metrics, eligibility and overlap, scenario outcomes, both solver implementations, constraints, app adapter behavior, and CSV output.
 
-## Project files
+## Troubleshooting
 
-- `app.py`: Streamlit app and solver integration.
-- `data/`: Darshan-authored synthetic scenarios and dataset notes.
-- `shiftwise/`: shared models, validation, eligibility/overlap helpers, metrics, and solvers.
-- `tests/`: shared-contract and end-to-end solver/data/app-adapter tests.
-- `docs/`: dataset specification, mathematical model, and demo/viva guidance.
+- **`py -3.14` is not recognized:** Install Python 3.14 and enable the Python launcher, or use an installed compatible interpreter to create `.venv`; that alternative has not been verified for this project.
+- **`streamlit` or a solver import is missing:** Confirm the project environment is active, then run `python -m pip install -r requirements.txt` from the repository root using that same interpreter.
+- **PuLP reports no available backend:** Check that `highspy` installed in the active environment with `python -m pip show highspy`. Re-run the requirements install in the same environment. The app reports backend errors rather than treating them as a successful allocation.
+- **The browser page is unavailable:** Confirm the Streamlit process is still running in the terminal and use the local address it prints; port 8501 may already be occupied.
+- **An incident is unattended in limited staffing:** This is the intended shortage demonstration, not a solver crash. The limited scenario has no eligible Boat unit for `rooftop-flood-rescue`.
+
+## Data contract and project layout
+
+Resource records contain `id`, `name`, `skills`, `available_slot_ids`, `max_assignments`, and `preferred_slot_ids`. Incident records contain `id`, `role`, `start_time`, `end_time`, and `required_skill`. Times are integer minutes after midnight and use half-open intervals `[start_time, end_time)`. The JSON `incident_triage` map is display metadata and is not passed into the solver objective.
+
+- `app.py` — Streamlit command center and integration.
+- `data/` — Darshan-authored synthetic scenarios and their notes.
+- `shiftwise/` — shared data models, validation, eligibility/overlap helpers, metrics, and OR-Tools/PuLP solvers.
+- `tests/` — `unittest` checks for shared contracts, data, solvers, and app adapters.
+- `docs/` — project planning and mathematical/demo documentation; consult current code and data notes where older documents still describe ShiftWise.
 
 ## Scope and limitations
 
-This is a local course prototype with fictional records and bundled scenarios. Custom uploads, accounts, databases, online deployment, notifications, and advanced styling are out of scope for the MVP. The committed requirements declare all solver dependencies, including HiGHS; the app reports solver import/backend errors instead of presenting them as successful rosters.
+ReliefOpt uses small, fictional, preconfigured scenarios and a single response period. It models each incident as needing at most one assigned unit, a unit’s maximum assignment count, availability, required skills, and overlapping time windows. It does not model severity in the objective, routing or travel time, geographic distance, changing conditions, multiple units required for one incident, field communications, live data, user accounts, persistent storage, or online deployment. These are not current features. Any extension to the mathematical contract would need coordinated changes to shared models, validation, both solvers, app, tests, and documentation.
+
+## Contributors
+
+These roles follow the current implementation plan and repository structure. Direct profile URLs were not available in the repository, so each name links to its own contribution detail below rather than to an unverified external profile.
+
+| Contributor | Project contribution |
+| --- | --- |
+| [Darshan](#darshan) | Synthetic disaster scenarios, dataset notes, Streamlit app, and app integration |
+| [Shriansh](#shriansh) | OR-Tools CP-SAT implementation and mathematical model documentation |
+| [Atharva](#atharva) | PuLP implementation of the shared optimization model |
+| [Manas](#manas) | Shared data structures, validation, common helpers, metrics, and tests/demo support |
+
+### Darshan
+
+Owns authorship of the synthetic normal and limited scenarios and their dataset notes, as well as the Streamlit operations interface and integration.
+
+### Shriansh
+
+Owns the OR-Tools CP-SAT solver implementation and the formal mathematical model documentation.
+
+### Atharva
+
+Owns the PuLP implementation of the same model and shared solver interface.
+
+### Manas
+
+Owns the shared data structures, validation, eligibility/overlap helpers, metrics, and shared-contract test/demo support described by the implementation plan.

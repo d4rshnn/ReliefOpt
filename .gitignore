@@ -1,5 +1,6 @@
 # Personal coordination prompts; keep local and out of GitHub.
 PERSONAL_STARTER_PROMPTS.md
+STUDY_GUIDE.md
 
 # Project-local Python environment
 .venv/
