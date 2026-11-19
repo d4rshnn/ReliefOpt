@@ -116,27 +116,7 @@ ReliefOpt uses small, fictional, preconfigured scenarios and a single response p
 
 ## Contributors
 
-These roles follow the current implementation plan and repository structure. Direct profile URLs were not available in the repository, so each name links to its own contribution detail below rather than to an unverified external profile.
-
-| Contributor | Project contribution |
-| --- | --- |
-| [Darshan](#darshan) | Synthetic disaster scenarios, dataset notes, Streamlit app, and app integration |
-| [Shriansh](#shriansh) | OR-Tools CP-SAT implementation and mathematical model documentation |
-| [Atharva](#atharva) | PuLP implementation of the shared optimization model |
-| [Manas](#manas) | Shared data structures, validation, common helpers, metrics, and tests/demo support |
-
-### Darshan
-
-Owns authorship of the synthetic normal and limited scenarios and their dataset notes, as well as the Streamlit operations interface and integration.
-
-### Shriansh
-
-Owns the OR-Tools CP-SAT solver implementation and the formal mathematical model documentation.
-
-### Atharva
-
-Owns the PuLP implementation of the same model and shared solver interface.
-
-### Manas
-
-Owns the shared data structures, validation, eligibility/overlap helpers, metrics, and shared-contract test/demo support described by the implementation plan.
+- [Darshan](https://github.com/d4rshnn)
+- [Shriansh](https://github.com/ShriyansBharuka)
+- [Atharva](https://github.com/atharvasalunke1267)
+- [Manas](https://github.com/jadhavmanas07-cloud)
